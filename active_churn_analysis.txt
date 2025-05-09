@@ -1,0 +1,24 @@
+
+--Churn rate--
+--customer retention -- who   are not purchasing recently -- churn rate
+--active customer-- customer who made a purchase with in last 6 months
+--churned customer -- customer who hasnt made a purchase in over 6 months
+
+
+select top 100 * from client_revenue;
+
+drop table if exists getlastpurchase;
+
+with getlastpurchase as (
+select 
+row_number() over (partition by customerkey order by cast(orderdate as date) desc) as rn,
+*
+from client_revenue
+)
+select * ,
+case when orderdate < dateadd(month, -6, '2017-06-30') then 'Churn' else 'Active' end as customer_status
+into churndate
+from getlastpurchase 
+where rn =1;
+
+select * from churndate;

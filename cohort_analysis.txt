@@ -1,0 +1,37 @@
+create view client_revenue as 
+select 
+round(sum((s.OrderQuantity * p.ProductPrice) - (s.OrderQuantity * p.ProductCost)), 2) as revenue,
+s.OrderDate,
+s.CustomerKey,
+P.ProductName,
+p.ModelName
+from sales s 
+left join products p on p.ProductKey = s.ProductKey
+group by p.ProductName, s.CustomerKey, s.OrderDate, p.ModelName
+
+
+-----------------------------------------------
+create index indx_productname on products (productkey)
+
+------------------------------------------------
+with cohort_year as (
+select
+distinct CustomerKey,
+year(min(OrderDate) over (partition by customerkey)) as cohort_year
+from sales)
+----------------------
+
+select 
+cy.cohort_year,
+year(cr.orderdate) as purchase_year,
+round(sum(cr.revenue), 2) as total_revenue
+into cohort_analysis
+from client_revenue cr 
+left join cohort_year as cy
+on cr.CustomerKey = cy.CustomerKey
+group by year(cr.orderdate), cy.cohort_year
+
+
+
+
+select * from cohort_analysis;
